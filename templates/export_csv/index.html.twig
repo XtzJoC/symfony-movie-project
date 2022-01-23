@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Exporter le base de données{% endblock %}
+
+{% block body %}
+<h1>Exporter la base de données</h1>
+<p>
+    La base de données a été correctement exportée
+</p>
+<a class="btn btn-primary" href="{{ file_name }}" role="button">Télécharger</a>
+{% endblock %}

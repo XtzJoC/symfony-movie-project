@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Importer un fichier CSV{% endblock %}
+
+{% block body %}
+<h1>Importer un fichier CSV</h1>
+{% for datum in data %}
+<div>
+    {{ datum.name }}
+</div>
+{% endfor %}
+{{ form(form) }}
+{% endblock %}
