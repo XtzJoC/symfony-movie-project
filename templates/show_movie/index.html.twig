@@ -4,15 +4,18 @@
 
 {% block body %}
 <div class="d-flex flex-row bd-highlight">
-    <div class="bd-highlight">
+    <div class="bd-highlight" style="flex: 1">
         <img src="{{ asset(movie_img) }}" class="img-thumbnail" alt="{{ movie.name }}">
     </div>
-    <div style="width: 40px"></div>
-    <div class="bd-highlight">
+    <div style="width: 40px;"></div>
+    <div class="bd-highlight" style="flex: 2">
         <h1>{{ movie.name }}</h1>
-        <h4>Note : {{ movie.score}}</h4>
+        <h4>Note : {{ movie.score|round(1)}}</h4>
         <p>Description :</p>
         <p>{{ movie.description }}</p>
+        <div class="text-danger">
+            {{ error_msg }}
+        </div>
         <div>
             {{ form(form) }}
         </div>

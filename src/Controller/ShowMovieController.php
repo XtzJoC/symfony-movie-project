@@ -25,6 +25,8 @@ class ShowMovieController extends AbstractController
 
         $form->handleRequest($request);
 
+        $error = NULL;
+
         if($form->isSubmitted() && $form->isValid()){
             $data = $form->getData();
             $password = $data['password'];
@@ -36,13 +38,16 @@ class ShowMovieController extends AbstractController
                 $entityManager->flush();
 
                 return $this->redirectToRoute('home_page');
-            }            
+            }else{
+                $error = 'Mauvais mot de passe';
+            }      
         }
 
         return $this->renderForm('show_movie/index.html.twig', [
             'movie' => $movie,
-            'movie_img' => 'movie_imgs/'.$movie->getName().'.png',
+            'movie_img' => 'movie_imgs/'.$movie->getId().'.png',
             'form' => $form,
+            'error_msg' => $error,
         ]);
     }
 }

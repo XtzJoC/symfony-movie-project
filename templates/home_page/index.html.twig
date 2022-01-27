@@ -14,12 +14,12 @@
     </thead>
     <tbody>
         {% for movie in movies %}
-                <tr>
-                    <td>{{movie.id}}</td>
-                    <td><a href='{{ path('show_movie',  {id: movie.id}) }}'>{{movie.name}}</a></td>
-                    <td>{{movie.description}}</td>
-                    <td>{{movie.score}}</td>
-                </tr>
+            <tr>
+                <td>{{movie.id}}</td>
+                <td><a href='{{ path('show_movie',  {id: movie.id}) }}'>{{movie.name}}</a></td>
+                <td>{{movie.description}}</td>
+                <td>{{movie.score|round(1)}}</td>
+            </tr>
         {% endfor %}
     </tbody>
 </table>

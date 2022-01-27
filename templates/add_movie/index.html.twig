@@ -3,5 +3,11 @@
 {% block title %}Ajouter un film{% endblock %}
 
 {% block body %}
+
+<h1>Votez pour un film</h1>
+<div class="text-danger">
+    {{ error_msg }}
+</div>
 {{ form(form) }}
+
 {% endblock %}

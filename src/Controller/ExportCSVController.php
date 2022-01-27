@@ -31,7 +31,7 @@ class ExportCSVController extends AbstractController
             ];
         }
 
-        $fileName = 'export.csv';
+        $fileName = 'exports/export.csv';
         
         file_put_contents(
             $fileName,

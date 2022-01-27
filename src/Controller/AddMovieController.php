@@ -14,7 +14,7 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Validator\Constraints\File;
 use Doctrine\Persistence\ManagerRegistry;
-use App\Entity\MovieVote;
+use App\Entity\voteData;
 use App\Entity\Movie;
 
 class AddMovieController extends AbstractController
@@ -22,16 +22,16 @@ class AddMovieController extends AbstractController
     #[Route('/add-movie', name: 'add_movie')]
     public function addMovie(Request $request, OMBdAPIConnector $ombdAPIConnector, ManagerRegistry $doctrine): Response
     {
-        $defaultData = ['name' => '', 'vote' => 5, 'email' => 'yonk@gmail.com', 'image' => NULL];
+        $defaultData = ['name' => '', 'vote' => 5, 'email' => 'yonk@gmail.com'];
 
         $form = $this->createFormBuilder($defaultData)
             ->add('name', TextType::class)
             ->add('vote', IntegerType::class, ['attr' => ['min' => 1, 'max' => 10]])
             ->add('email', EmailType::class)
-            ->add('image', FileType::class, [
+            ->add('imageFile', FileType::class, [
                 'label' => 'Image du film',
                 'attr' => [
-                    'accept' => 'image/png, image/jpeg',
+                    'accept' => '.png, .jpeg, .jpg',
                 ],
                 'mapped' => false,
                 'required' => false,
@@ -39,71 +39,78 @@ class AddMovieController extends AbstractController
                     new File([
                         'maxSize' => '1024k',
                         'mimeTypes' => [
+                            'image/png',
                             'image/jpeg',
-                            'image/png,'
                         ],
-                        'mimeTypesMessage' => 'Merci d\'uploader une image',
                     ])
                 ],
             ])
-            ->add('submit', SubmitType::class)
+            ->add('submit', SubmitType::class, ['label' => 'Voter'])
             ->getForm();
-
 
         $form->handleRequest($request);
 
+        $error = NULL;
+
         if($form->isSubmitted() && $form->isValid()){
-            $movieVote = $form->getData();
+            $voteData = $form->getData();
+            $imageFile = $form->get('imageFile')->getData();
 
-            $apiMovie = $ombdAPIConnector->getMovieFromAPI($movieVote['name']);
-            
-            if($apiMovie){
-                $movieName = $apiMovie['name'];
-                $movieDescription = $apiMovie['description'];
-                $movieImgURL = $apiMovie['imgURL'];
-    
-                $entityManager = $doctrine->getManager();
-                $movie = $entityManager->getRepository(Movie::class)->findByName($movieName);
-    
-                if($movie == NULL){
-                    // Le film n'existe pas dans la base de données
-                    $movie = new Movie();
-                    $movie->setName($movieName);
-                    $movie->setDescription($movieDescription);
-                    $movie->setScore($movieVote['vote']);
-                    $movie->setNbVotes(1);
+            $movieFromAPI = $ombdAPIConnector->getMovieFromAPI($voteData['name']);
 
-                    $entityManager->persist($movie);
-                    $entityManager->flush();
+            if($movieFromAPI){
+                $name = $movieFromAPI['name'];
 
-                    // Une image custom à été renséignée
-                    if($movieVote['image']){
-                        $movieImgURL = $movieVote['image']->getPathname();
-                    }
-
-                    var_dump($movieImgURL);
-
-                    // Sauvegarde de l'image du film
-                    $file_name = 'movie_imgs/'.$movieName.'.png';
-                    file_put_contents($file_name, file_get_contents($movieImgURL));
+                if($voteData['name'] != $name){
+                    $error = "Le film '".$voteData['name']."' n'existe pas. Voulez-vous dire '".$name."' ?";
                 }else{
-                    // Le film éxiste dans la base de données
-                    $average = $movie->getScore();
-                    $size = $movie->getNbVotes();
-                    $value = $movieVote['vote'];
+                    $entityManager = $doctrine->getManager();
+                    $movie = $entityManager->getRepository(Movie::class)->findByName($name);
+        
+                    if($movie == NULL){
+                        // Le film n'existe pas dans la base de données
+                        $description = $movieFromAPI['description'];
+                        $imgURL = $movieFromAPI['imgURL'];
+                        
+                        $movie = new Movie();
+                        $movie->setName($name);
+                        $movie->setDescription($description);
+                        $movie->setScore($voteData['vote']);
+                        $movie->setNbVotes(1);
 
-                    $newScore = ($size * $average + $value) / ($size + 1);
+                        $entityManager->persist($movie);
+                        $entityManager->flush();
 
-                    $movie->setScore($newScore);
-                    $entityManager->flush();
+                        // Une image custom à été renséignée
+                        if($imageFile){
+                            $imgURL = $imageFile->getPathname();
+                        }
+
+                        // Sauvegarde de l'image du film
+                        $file_name = 'movie_imgs/'.$movie->getId().'.png';
+                        file_put_contents($file_name, file_get_contents($imgURL));
+                    }else{
+                        // Le film éxiste dans la base de données
+                        $average = $movie->getScore();
+                        $size = $movie->getNbVotes();
+                        $value = $voteData['vote'];
+
+                        $newScore = ($size * $average + $value) / ($size + 1);
+
+                        $movie->setScore($newScore);
+                        $entityManager->flush();
+                    }
+        
+                    return $this->redirectToRoute('show_movie', ['id' => $movie->getId()]);
                 }
-    
-                //return $this->redirectToRoute('home_page');
+            }else{
+                $error = "Le film '".$voteData['name']."' n'existe pas.";
             }
         }
 
         return $this->renderForm('add_movie/index.html.twig', [
             'form' => $form,
+            'error_msg' => $error,
         ]);
     }
 }
