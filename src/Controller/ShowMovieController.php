@@ -34,6 +34,12 @@ class ShowMovieController extends AbstractController
             if($password == $this->getParameter('admin_password')){
                 $entityManager = $doctrine->getManager();
 
+                $fileName = 'movie_imgs/'.$movie->getId().'.png';
+
+                if(file_exists($fileName)){
+                    unlink($fileName);
+                }
+
                 $entityManager->remove($movie);
                 $entityManager->flush();
 

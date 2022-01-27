@@ -4,10 +4,8 @@
 
 {% block body %}
 <h1>Importer un fichier CSV</h1>
-{% for datum in data %}
-<div>
-    {{ datum.name }}
+<div class="text-danger">
+    {{ error }}
 </div>
-{% endfor %}
 {{ form(form) }}
 {% endblock %}

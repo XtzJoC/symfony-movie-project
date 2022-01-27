@@ -12,11 +12,13 @@ use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Validator\Constraints\File;
+use Doctrine\Persistence\ManagerRegistry;
+use App\Entity\Movie;
 
 class ImportCSVController extends AbstractController
 {
     #[Route('/import-csv', name: 'import_csv')]
-    public function index(Request $request): Response
+    public function index(Request $request, ManagerRegistry $doctrine): Response
     {
         $defaultData = [];
 
@@ -44,17 +46,42 @@ class ImportCSVController extends AbstractController
         $data = [];
 
         $form->handleRequest($request);
+
+        $error = NULL;
+
         if($form->isSubmitted() && $form->isValid()){
             $csvFile = $form->get('csvFile')->getData();
 
             $serializer = new Serializer([new ObjectNormalizer()], [new CsvEncoder()]);
             $data = $serializer->decode(file_get_contents($csvFile->getPathname()), 'csv');
-            var_dump($data);
+            
+            foreach($data as $datum){
+                if(!isset($datum['name']) || !isset($datum['description']) || !isset($datum['note'])){
+                    $error = "Le fichier csv n'a pas le bon format (name | description | note)";
+                    break;
+                }
+
+                $entityManager = $doctrine->getManager();
+
+                $movie = new Movie();
+                $movie->setName($datum['name']);
+                $movie->setDescription($datum['description']);
+                $movie->setScore($datum['note']);
+                $movie->setNbVotes(1);
+
+                $entityManager->persist($movie);
+                $entityManager->flush();
+            }
+
+            if($error == NULL){
+                return $this->redirectToRoute('home_page');
+            }
         }
 
         return $this->renderForm('import_csv/index.html.twig', [
             'form' => $form,
             'data' => $data,
+            'error' => $error,
         ]);
     }
 }
